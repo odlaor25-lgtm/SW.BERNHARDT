@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SW.BERNHARDT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'pastel-blue': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e'
+                        }
+                    }
+                }
+            }
+        };
+
+        // Language system
+        // --- Language System ---
+
+        let currentLanguage = 'th';
+        const translations = {
+            th: {
+                // Login
+                loginTitle: 'SW.BERNHARDT',
+                loginSubtitle: 'Management',
+                loginEdition: ' Liquid Glass Edition',
+                username: 'รหัสลูกค้า / Username',
+                password: 'รหัสผ่าน / Password',
+                usernamePlaceholder: 'กรอกรหัสลูกค้าหรือ ADMIN',
+                passwordPlaceholder: 'เบอร์โทรศัพท์หรือรหัสผ่าน',
+                loginButton: 'เข้าสู่ระบบ ',
+                loginInfo: ' ข้อมูลการเข้าสู่ระบบ',
+                customerInfo: ' ลูกค้า: ใช้รหัสลูกค้า + เบอร์โทรศัพท์',
+                adminInfo: ' ผู้ดูแล: ADMIN / 0000',
+
+                // Common
+                logout: 'ออกจากระบบ',
+                close: 'ปิด',
+                print: 'พิมพ์',
+                edit: 'แก้ไข',
+                delete: 'ลบ',
+                add: 'เพิ่ม',
+                save: 'บันทึก',
+                cancel: 'ยกเลิก',
+
+                // Customer Portal
+                customerPortal: 'Customer Portal',
+                myBills: ' บิลของฉัน',
+                currentPrice: ' ราคาอ้อยปัจจุบัน',
+                companyInfo: ' ข้อมูลบริษัท',
+                filter: 'กรอง',
+                viewBill: 'ดูบิล',
+                paid: 'ชำระแล้ว',
+                pending: 'รอชำระ',
+                bahtPerTon: 'บาท/ตัน',
+                updated: 'อัปเดต',
+                date: 'วันที่',
+                amount: 'จำนวนเงิน',
+                noBills: 'ไม่มีบิลในระบบ',
+
+                // Admin Dashboard
+                adminDashboard: 'Admin Dashboard',
+                dashboard: 'Dashboard',
+                cane: 'Cane',
+                labor: 'Labor',
+                bills: 'Bills',
+                totalLoads: 'Total Loads',
+                totalBills: 'Total Bills',
+                customers: 'Customers',
+                recentActivities: ' Recent Activities',
+                quickActions: ' Quick Actions',
+                createBill: 'Create Bill',
+                updatePrice: 'Update Price',
+                manageCane: 'Manage Cane',
+                manageLabor: 'Manage Labor',
+
+                // Notifications
+                loginRequired: 'กรุณากรอกข้อมูลให้ครบถ้วน',
+                loginError: 'รหัสลูกค้าหรือรหัสผ่านไม่ถูกต้อง',
+                priceUpdated: 'อัปเดตราคาเรียบร้อยแล้ว',
+                thankYou: 'ขอบคุณที่ใช้บริการ'
+            }
+        };
+
+        // FIX: Re-insert t() function to fix ReferenceError
+        function t(key) {
+            const lang = translations[currentLanguage] || translations['th'];
+            return lang[key] || key;
+        }
+
+        function applyTranslations() {
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                if (el.tagName === 'INPUT' && el.hasAttribute('placeholder')) {
+                    el.placeholder = t(key);
+                } else {
+                    el.innerHTML = t(key);
+                }
+            });
+        }
+
+        function switchLanguage(lang) {
+            if (lang !== 'th') return;
+
+            currentLanguage = lang;
+            updateLanguage();
+            localStorage.setItem('preferredLanguage', lang);
+
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('bg-opacity-40', 'ring-2', 'ring-white');
+                btn.classList.add('bg-opacity-20');
+            });
+            document.getElementById(`langTH`).classList.remove('bg-opacity-20');
+            document.getElementById(`langTH`).classList.add('bg-opacity-40', 'ring-2', 'ring-white');
+            if (document.getElementById(`headerLangTH`)) {
+                document.getElementById(`headerLangTH`).classList.remove('bg-opacity-20');
+                document.getElementById(`headerLangTH`).classList.add('bg-opacity-40', 'ring-2', 'ring-white');
+            }
+            if (document.getElementById(`adminLangTH`)) {
+                document.getElementById(`adminLangTH`).classList.remove('bg-opacity-20');
+                document.getElementById(`adminLangTH`).classList.add('bg-opacity-40', 'ring-2', 'ring-white');
+            }
+
+        }
+
+        function updateLanguage() {
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (element.tagName === 'INPUT' && element.hasAttribute('placeholder')) {
+                    element.placeholder = t(key);
+                } else {
+                    element.innerHTML = t(key);
+                }
+            });
+            if (window.currentUser && window.currentUserRole === 'CUSTOMER') {
+                loadCustomerData();
+            } else if (window.currentUser && window.currentUserRole === 'ADMIN') {
+                loadAdminData();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedLang = localStorage.getItem('preferredLanguage') || 'th';
+            switchLanguage(savedLang);
+        });
+    </script>
+    <style>
+        body {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: linear-gradient(135deg, #F8FBFF 0%, #F0F9FF 30%, #E0F2FE 70%, #F8FAFC 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .liquid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(125, 211, 252, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(186, 230, 253, 0.05) 0%, transparent 50%);
+            animation: liquidFlow 20s ease-in-out infinite;
+        }
+
+        @keyframes liquidFlow {
+
+            0%,
+            100% {
+                transform: scale(1) rotate(0deg);
+            }
+
+            33% {
+                transform: scale(1.1) rotate(1deg);
+            }
+
+            66% {
+                transform: scale(0.9) rotate(-1deg);
+            }
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 2px solid rgba(56, 189, 248, 0.6);
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-effect::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .glass-effect:hover::before {
+            left: 100%;
+        }
+
+        .glass-effect:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 16px 48px rgba(0, 0, 0, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .bubble {
+            position: absolute;
+            background: rgba(56, 189, 248, 0.06);
+            border-radius: 50%;
+            animation: bubble 15s infinite linear;
+        }
+
+        @keyframes bubble {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-100px) scale(1);
+                opacity: 0;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-100%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        /* iOS 26 Login Card */
+        .login-card {
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 3px solid rgba(56, 189, 248, 0.7);
+            border-radius: 28px;
+            padding: 40px;
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.7);
+        }
+
+        .login-input {
+            background: rgba(255, 255, 255, 0.4) !important;
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(56, 189, 248, 0.8) !important;
+            color: #2d3748 !important;
+            border-radius: 16px !important;
+            padding: 16px 20px !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .login-input::placeholder {
+            color: rgba(45, 55, 72, 0.6) !important;
+        }
+
+        .login-input:focus {
+            background: rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 0 0 0 2px rgba(135, 206, 250, 0.3) !important;
+            transform: scale(1.02);
+        }
+
+        .login-btn {
+            background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 100%) !important;
+            border: none !important;
+            border-radius: 20px !important;
+            padding: 18px !important;
+            font-weight: 700 !important;
+            font-size: 18px !important;
+            box-shadow: 0 8px 24px rgba(56, 189, 248, 0.25);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+            transition: left 0.5s;
+        }
+
+        .login-btn:hover::before {
+            left: 100%;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(135, 206, 235, 0.4);
+        }
+
+        .brand-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 100%);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            box-shadow: 0 8px 24px rgba(56, 189, 248, 0.25);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        /* Customer Portal Styling */
+        .portal-header {
+            background: rgba(56, 189, 248, 0.12);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+        }
+
+        .portal-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(25px);
+            border: 2px solid rgba(56, 189, 248, 0.5);
+            border-radius: 24px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .portal-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1);
+        }
+
+        .bill-item {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(56, 189, 248, 0.4);
+            border-radius: 16px;
+            transition: all 0.3s;
+        }
+
+        .bill-item:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: scale(1.02);
+        }
+
+        .status-paid {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.25);
+        }
+
+        .status-pending {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.25);
+        }
+
+        .lang-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            body {
+                background: white !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="liquid-bg"></div>
+    <div class="floating-elements" id="floatingElements"></div>
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="login-card w-full max-w-md fade-in">
+            <div class="text-center mb-8">
+                <div class="brand-logo">
+                    <span class="text-white text-3xl font-bold">SW</span>
+                </div>
+                  <h1 class="text-3xl font-bold text-gray-700 mb-2" data-translate="loginTitle">SW.BERNHARDT</h1>
+                  <p class="text-gray-600 text-lg" data-translate="loginSubtitle"> Management</p>
+                  <p class="text-gray-500 text-sm mt-2" data-translate="loginEdition"> Liquid Glass Edition</p>
+                 <div class="flex justify-center space-x-2 mt-4">
+                 <button onclick="switchLanguage('th')" class="lang-btn px-3 py-1 text-xs bg-white bg-opacity-60 text-gray-700 rounded-lg hover:bg-opacity-70 transition-all backdrop-blur-10 ring-2 ring-gray-300" id="langTH">🇹🇭 ไทย</button>
+                </div>
+            </div>
+           <form id="loginForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2" data-translate="username">รหัสลูกค้า / Username</label>
+                    <input type="text" id="username" class="login-input w-full" data-translate="usernamePlaceholder" placeholder="กรอกรหัสลูกค้าหรือ ADMIN">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2" data-translate="password">รหัสผ่าน / Password</label>
+                    <input type="password" id="password" class="login-input w-full" data-translate="passwordPlaceholder" placeholder="เบอร์โทรศัพท์หรือรหัสผ่าน">
+                </div>
+                <button type="submit" class="login-btn w-full text-white" data-translate="loginButton">เข้าสู่ระบบ
+              </button>
+            </form>
+
+            <div class="mt-8 text-center text-sm text-gray-600">
+                <div class="bg-white bg-opacity-50 rounded-xl p-4 backdrop-blur-10">
+                    <p class="font-semibold mb-2 text-gray-700"  data-translate="loginInfo"> ข้อมูลการเข้าสู่ระบบ</p>
+                    <p data-translate="customerInfo"> ลูกค้า: ใช้รหัสลูกค้า + เบอร์โทรศัพท์</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="customerPortal" class="hidden min-h-screen">
+        <header class="portal-header shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-sky-400 to-sky-500 rounded-lg flex items-center justify-center mr-3">
+                            <span class="text-white font-bold">SW</span>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-semibold text-gray-700"
+                                data-translate="loginTitle">SW.BERNHARDT</h1>
+                            <p class="text-sm text-gray-600" data-translate="customerPortal">Customer Portal</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="flex space-x-1">
+                            <button onclick="switchLanguage('th')" class="lang-btn px-2 py-1 text-xs bg-white bg-opacity-20 text-gray-700 rounded hover:bg-opacity-30 transition-all" id="headerLangTH">🇹🇭</button>
+                        </div>
+                        <span id="customerName" class="text-sm text-gray-700"></span>
+                        <button onclick="logout()" class="text-gray-700 hover:text-gray-900 text-sm bg-white bg-opacity-20 px-3 py-1 rounded-lg backdrop-blur-10 transition-all" data-translate="logout">ออกจากระบบ</button>
+                    </div>
+                </div>
+            </div>
+
+        </header>
+       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2">
+                    <div class="portal-card shadow-lg p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-semibold text-gray-700" data-translate="myBills"> บิลของฉัน</h2>
+
+                            <div class="flex space-x-2">
+                                <input type="date" id="filterDate" class="px-3 py-2 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-lg text-sm text-gray-700 backdrop-blur-10">
+                                <button onclick="filterBills()" class="px-4 py-2 bg-gradient-to-r from-sky-400 to-sky-500 text-white rounded-lg hover:from-sky-500 hover:to-sky-600 text-sm transition-all" data-translate="filter">กรอง</button>
+                            </div>
+                           </div>
+                        <div id="billsList" class="space-y-4">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="portal-card shadow-lg p-6">
+                      <h3 class="text-lg font-semibold text-gray-700 mb-4" data-translate="currentPrice"> ราคาอ้อยปัจจุบัน</h3>
+                        <div class="text-center">
+                           <div class="text-4xl font-bold text-gray-700 mb-2" id="currentPrice">-</div>
+                            <div class="text-sm text-gray-600 mb-2" data-translate="bahtPerTon">บาท/ตัน</div>
+                          <div class="text-xs text-gray-500" id="priceUpdated">-</div>
+                      </div>
+                  </div>
+                    <div class="portal-card shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4" data-translate="companyInfo"> ข้อมูลบริษัท</h3>
+                        <div class="space-y-3 text-sm text-gray-600">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-lg"></span>
+                                <span><strong>SW.BERNHARDT</strong></span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-lg"></span>
+                                <span>วิษณุ โอดละออ</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-lg"></span>
+                                <span>471 หมู่ 11 ทุ่งฝน ต.ทุ่งฝน อ.ทุ่งฝน จ.อุดรธานี</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-lg"></span>
+                                <span>odlaor25@gmail.com</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-lg"></span>
+                                <span>0932712139</span>
+                            </div>
+                        </div>
+                    </div>
+                 </div> 
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="adminDashboard" class="hidden min-h-screen">
+        <header class="portal-header shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-sky-400 to-sky-500 rounded-lg flex items-center justify-center mr-3">
+                            <span class="text-white font-bold">SW</span>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-semibold text-gray-700" data-translate="loginTitle">SW.BERNHARDT</h1>
+                            <p class="text-sm text-gray-600" data-translate="adminDashboard">Admin Dashboard</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <nav class="hidden md:flex space-x-6">
+                            <button onclick="showAdminSection('dashboard')" class="admin-nav-btn text-gray-700 font-medium border-b-2 border-sky-400" data-translate="dashboard">Dashboard</button>
+                            <button onclick="showAdminSection('cane')" class="admin-nav-btn text-gray-500 hover:text-gray-700" data-translate="cane">Cane</button>
+                            <button onclick="showAdminSection('labor')" class="admin-nav-btn text-gray-500 hover:text-gray-700" data-translate="labor">Labor</button>
+                            <button onclick="showAdminSection('bills')" class="admin-nav-btn text-gray-500 hover:text-gray-700" data-translate="bills">Bills</button>
+                        </nav>
+                        <div class="flex space-x-1">
+                            <button onclick="switchLanguage('th')" class="lang-btn px-2 py-1 text-xs bg-white bg-opacity-20 text-gray-700 rounded hover:bg-opacity-30 transition-all" id="adminLangTH">🇹🇭</button>
+                        </div>
+                        <button onclick="logout()" class="text-gray-700 hover:text-gray-900 text-sm bg-white bg-opacity-20 px-3 py-1 rounded-lg backdrop-blur-10 transition-all" data-translate="logout">ออกจากระบบ</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div id="adminDashboardSection" class="admin-section">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                     <div class="portal-card shadow-lg p-6">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                                <span class="text-green-600 text-xl"></span>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm text-gray-600" data-translate="totalLoads">Total Loads</p>
+                                <p class="text-2xl font-bold text-gray-700" id="totalLoads">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="portal-card shadow-lg p-6">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                                <span class="text-blue-600 text-xl"></span>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm text-gray-600" data-translate="totalBills">Total Bills</p>
+                                <p class="text-2xl font-bold text-gray-700" id="totalBills">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="portal-card shadow-lg p-6">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-yellow-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                                <span class="text-yellow-600 text-xl"></span>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm text-gray-600" data-translate="customers">Customers</p>
+                                <p class="text-2xl font-bold text-gray-700" id="totalCustomers">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="portal-card shadow-lg p-6">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-purple-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                                <span class="text-purple-600 text-xl"></span>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm text-gray-600" data-translate="currentPrice">Current Price</p>
+                                <p class="text-2xl font-bold text-gray-700" id="dashboardPrice">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="portal-card shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4" data-translate="recentActivities">Recent Activities
+                        </h3>
+                        <div id="recentActivities" class="space-y-3">
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="portal-card shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4" data-translate="quickActions"> Quick Actions</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button onclick="showCreateBillModal()" 
+                            class="p-4 bg-white bg-opacity-10 rounded-lg hover:bg-opacity-20 transition-all backdrop-blur-10">
+                            <div class="text-2xl mb-2"></div>
+                            <div class="text-sm font-medium text-gray-700" data-translate="createBill">Create Bill</div>
+                            </button>
+                            <button onclick="showPriceUpdateModal()" class="p-4 bg-white bg-opacity-10 rounded-lg hover:bg-opacity-20 transition-all backdrop-blur-10">
+                            <div class="text-2xl mb-2"></div>
+                            <div class="text-sm font-medium text-gray-700" data-translate="updatePrice">Update Price</div>
+                            </button>
+                            <button onclick="showAdminSection('cane')" class="p-4 bg-white bg-opacity-10 rounded-lg hover:bg-opacity-20 transition-all backdrop-blur-10">
+                            <div class="text-2xl mb-2"></div>
+                            <div class="text-sm font-medium text-gray-700" data-translate="manageCane">Manage Cane</div>
+                            </button>
+                            <button onclick="showAdminSection('labor')" class="p-4 bg-white bg-opacity-10 rounded-lg hover:bg-opacity-20 transition-all backdrop-blur-10">
+                                <div class="text-2xl mb-2"></div>
+                                <div class="text-sm font-medium text-gray-700" data-translate="manageLabor">Manage Labor</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="adminCaneSection" class="admin-section hidden">
+                <div class="portal-card shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold text-gray-700"><span data-translate="cane">Cane</span> Management</h2>
+                        <button onclick="showAddLoadModal()" class="px-4 py-2 bg-gradient-to-r from-sky-400 to-sky-500 text-white rounded-lg hover:from-sky-500 hover:to-sky-600 transition-all">Add Load</button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-2 border-sky-400 border-opacity-50 rounded-lg">
+
+                            <thead class="bg-white bg-opacity-10 border-b-2 border-sky-400 border-opacity-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-sky-400 border-opacity-30" data-translate="date">Date</th>
+
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-sky-400 border-opacity-30">
+                                        Customer</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-sky-400 border-opacity-30">
+                                        Truck</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-sky-400 border-opacity-30">
+                                        Weight (tons)</th>
+
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="caneLoadsTable" class="divide-y divide-sky-400 divide-opacity-40">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="adminLaborSection" class="admin-section hidden">
+                <div class="portal-card shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold  text-gray-700"> <span data-translate="labor">Labor</span> Management</h2>
+                        <button onclick="showAddLaborModal()" class="px-4 py-2 bg-gradient-to-r from-sky-400 to-sky-500 text-white rounded-lg hover:from-sky-500 hover:to-sky-600 transition-all">Add Labor Record</button>
+                      </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-2 border-sky-400 border-opacity-50 rounded-lg">
+                            <thead class="bg-white bg-opacity-10 border-b-2 border-sky-400 border-opacity-50">
+
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-sky-400 border-opacity-30" data-translate="date">Date</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-sky-400 border-opacity-30">
+                                        Employee</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-sky-400 border-opacity-30">
+                                        Type</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-sky-400 border-opacity-30" data-translate="amount">Amount</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="laborRecordsTable" class="divide-y divide-sky-400 divide-opacity-40">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="adminBillsSection" class="admin-section hidden">
+                <div class="portal-card shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold text-gray-700"> <span data-translate="bills">Bills</span> Management</h2>
+                        <button onclick="showCreateBillModal()" class="px-4 py-2 bg-gradient-to-r from-sky-400 to-sky-500 text-white rounded-lg hover:from-sky-500 hover:to-sky-600 transition-all" data-translate="createBill">Create Bill</button>
+                       </div>
+                   </div>
+               </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-2 border-sky-400 border-opacity-50 rounded-lg">
+                            <thead class="bg-white bg-opacity-10 border-b-2 border-sky-400 border-opacity-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-sky-400 border-opacity-30">Bill No</th>
+                                   
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-sky-400 border-opacity-30" data-translate="date">Date</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-sky-400 border-opacity-30">Customer</th>
+                                     
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-sky-400 border-opacity-30" data-translate="amount">Amount</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allBillsTable" class="divide-y divide-sky-400 divide-opacity-40">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="billModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex  items-center justify-center p-4 z-50">
+        <div class="portal-card shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 border-opacity-20 no-print">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gray-700"> Bill Preview</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="printBill()" class="px-4 py-2 bg-gradient-to-r from-sky-400 to-sky-500 text-white rounded-lg hover:from-sky-500 hover:to-sky-600 transition-all" data-translate="print">Print</button>
+                        <button onclick="closeBillModal()" class="px-4 py-2 bg-white bg-opacity-20 text-gray-700 rounded-lg hover:bg-opacity-30 transition-all" data-translate="close">Close</button>
+                    </div>
+                </div>
+            </div>
+            <div id="billContent" class="p-6">
+            </div>
+        </div>
+    </div>
+
+    <div id="createBillModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 no-print">
+        <div class="portal-card shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+             <div class="p-6 border-b border-gray-200 border-opacity-20">
+                <h3 class="text-lg font-semibold text-gray-700" data-translate="createBill">Create Bill</h3>
+            </div>
+            <form id="createBillForm" class="flex-grow overflow-y-auto p-6 space-y-4"> </form>
+               <label for="billCustomerSelect" class="block text-sm font-medium text-gray-700 mb-2">Customer</label>
+                    <select id="billCustomerSelect" class="w-full px-3 py-2 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-lg text-sm text-gray-700 backdrop-blur-10">
+                        <option>Select a customer</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4"> </divdiv>
+                      <h4 class="font-semibold text-gray-700 mb-2">Unbilled Cane Loads</h4>
+                        <div id="billableLoads" class="space-y-2 p-2 bg-white bg-opacity-10 rounded-lg max-h-64 overflow-y-auto">
+                          <p class="text-sm text-gray-500 text-center p-4">Select a customer to see loads.</p>
+                         </div>
+                      </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">Unbilled Labor</h4>
+                        <div id="billableLabor" class="space-y-2 p-2 bg-white bg-opacity-10 rounded-lg max-h-64 overflow-y-auto">
+                            <p class="text-sm text-gray-500 text-center p-4">Select a customer to see labor costs.</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-gray-700">Summary</h4>
+                    <div class="p-4 bg-white bg-opacity-20 rounded-lg mt-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Total Amount:</span>
+
+                            <span id="billTotalAmount" class="text-2xl font-bold text-gray-800">0.00 THB</span>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <div class="p-6 border-t border-gray-200 border-opacity-20">
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeCreateBillModal()" class="px-4 py-2 bg-white bg-opacity-20 text-gray-700 rounded-lg hover:bg-opacity-30 transition-all" data-translate="cancel">Cancel</button>
+                    <button type="submit" form="createBillForm" class="px-4 py-2 bg-gradient-to-r from-sky-400 to-sky-500 text-white rounded-lg hover:from-sky-500 hover:to-sky-600 transition-all" data-translate="save">Save Bill</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        /* CONFIG: your WebApp exec URL */
+        // FIX: The API_URL needs to be dynamic or hardcoded based on the deployment strategy.
+        // If running on your Ubuntu server, use: const API_URL = "http://192.168.1.146:3000/api";
+        // If running in Apps Script, the code below is used.
+        const API_URL = "https://script.google.com/macros/s/AKfycbz7WcYilFlouOl2E_ZdVpWhlvgrG_AkBTF6Q_ondTR5RI39vWApnCc24CG_qm-hpJ46/exec";
+        /* ======= Safety globals ======= */
+        window.currentUser = null;
+        window.currentUserRole = null;
+        window.SWB_DATA = null;
+        /* ======= Core UI Functions ======= */
+        function showCustomerPortal() {
+            if (!document.getElementById('loginScreen')) return; // Safety check
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('customerPortal').classList.remove('hidden');
+        }
+
+        function showAdminDashboard() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.remove('hidden');
+        }
+
+        function loadCustomerData() {
+            if (!window.currentUser || !window.SWB_DATA) return;
+            // Set customer name in header
+            const customerNameEl = document.getElementById('customerName');
+            if (customerNameEl) customerNameEl.textContent = window.currentUser.name || window.currentUser.customer_no;
+            // Update current price
+            const price = (window.SWB_DATA.settings || []).find(function(s) { return s.key === 'current_price'; })?.value || 0;
+            const priceUpdated = (window.SWB_DATA.settings || []).find(function(s) { return s.key === 'price_last_updated'; })?.value;
+            document.getElementById('currentPrice').textContent = new Intl.NumberFormat('th-TH').format(price);
+            if (priceUpdated) {
+                document.getElementById('priceUpdated').textContent = `${t('updated')} ${new Date(priceUpdated).toLocaleDateString('th-TH')}`;
+            }
+
+            // Load and display bills
+            const customerBills = (window.SWB_DATA.bills || []).filter(function(bill) { return String(bill.customer_no) === String(window.currentUser.customer_no); });
+            const billsList = document.getElementById('billsList');
+            billsList.innerHTML = '';
+
+            if (customerBills.length === 0) {
+                billsList.innerHTML = `<div class="text-center text-gray-500 py-8" data-translate="noBills">${t('noBills')}</div>`;
+                return;
+            }
+
+            customerBills.sort(function(a, b) { return new Date(b.date) - new Date(a.date); }).forEach(function(bill) {
+                const billEl = document.createElement('div');
+                billEl.className = 'bill-item p-4 flex justify-between items-center';
+                const statusClass = bill.status === 'Paid' ? 'status-paid' : 'status-pending';
+                const statusText = bill.status === 'Paid' ? t('paid') : t('pending');
+
+                billEl.innerHTML = `
+                    <div
+                        <p class="font-semibold text-gray-700">Bill #${bill.bill_no}</p>
+                        <p class="text-sm text-gray-500" data-translate="date">${t('date')}: ${new Date(bill.date).toLocaleDateString('th-TH')}</p>
+
+                        <p class="text-lg font-bold text-gray-800 mt-1">${new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(bill.total_amount)}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="px-3 py-1 text-xs font-medium rounded-full ${statusClass}">${statusText}</span>
+                        <button onclick="viewBill('${bill.bill_no}')" class="mt-2 block ml-auto px-3 py-1 bg-white bg-opacity-20 text-gray-700 rounded-lg hover:bg-opacity-30 text-sm" data-translate="viewBill">${t('viewBill')}</button>
+                    </div>
+                `;
+                billsList.appendChild(billEl);
+            });
+        }
+
+        function loadAdminData() {
+            if (!window.currentUser || !window.SWB_DATA) return;
+            const { loads = [], bills = [], customers = [], labor = [], settings = [] } = window.SWB_DATA;
+            // Dashboard Stats
+            document.getElementById('totalLoads').textContent = loads.length;
+            document.getElementById('totalBills').textContent = bills.length;
+            document.getElementById('totalCustomers').textContent = customers.length;
+            const price = (settings || []).find(function(s) { return s.key === 'current_price'; })?.value || 0;
+            document.getElementById('dashboardPrice').textContent = new Intl.NumberFormat('th-TH').format(price);
+            // Recent Activities (example: last 5 bills)
+            const recentActivities = document.getElementById('recentActivities');
+            recentActivities.innerHTML = '';
+            [].slice.call(bills).sort(function(a, b) { return new Date(b.date) - new Date(a.date); }).slice(0, 5).forEach(function(act) {
+                const actEl = document.createElement('div');
+                actEl.className = 'text-sm text-gray-600';
+                actEl.innerHTML = `Bill <span class="font-semibold text-gray-700">#${act.bill_no}</span> created for ${act.customer_name}.`;
+                recentActivities.appendChild(actEl);
+            });
+            if (bills.length === 0) recentActivities.innerHTML = '<p class="text-sm text-gray-500">No recent activities.</p>';
+            // Populate Cane Loads Table
+            const caneTable = document.getElementById('caneLoadsTable');
+                  caneTable.innerHTML = '';
+                  loads.forEach(load => {
+            const row = caneTable.insertRow();
+                row.className = 'hover:bg-white hover:bg-opacity-10';
+                row.innerHTML = `
+                    <td class="px-4 py-3 border-r border-sky-400 border-opacity-30">${new Date(load.date).toLocaleDateString('th-TH')}</td>
+                    <td class="px-4 py-3 border-r border-sky-400 border-opacity-30">${load.customer_name}</td>
+                    <td class="px-4 py-3 border-r border-sky-400 border-opacity-30">${load.truck_id}</td>
+                    <td class="px-4 py-3 border-r border-sky-400 border-opacity-30">${load.weight}</td>
+                    <td class="px-4 py-3">
+                        <button class="text-sky-600 hover:underline text-sm" data-translate="edit">${t('edit')}</button>
+                        <button onclick="deleteItem('load', '${load.id}')" class="text-red-500 hover:underline text-sm ml-2" data-translate="delete">${t('delete')}</button>
+                    </td>
+                `;
+            });
+            if (loads.length === 0) caneTable.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">No cane loads found.</td></tr>';
+            // Populate Labor Records Table
+            const laborTable = document.getElementById('laborRecordsTable');
+                  laborTable.innerHTML = '';
+                  labor.forEach(rec => {
+            const row = laborTable.insertRow();
+                row.className = 'hover:bg-white hover:bg-opacity-10';
+                row.innerHTML = `
+                    <td class="px-4 py-3 border-r border-sky-400 border-opacity-30">${new Date(rec.date).toLocaleDateString('th-TH')}</td>
+                    <td class="px-4 py-3 border-r border-sky-400 border-opacity-30">${rec.employee_name}</td>
+                    <td class="px-4 py-3 border-r border-sky-400 border-opacity-30">${rec.type}</td>
+                    <td class="px-4 py-3 border-r border-sky-400 border-opacity-30">${new Intl.NumberFormat('th-TH').format(rec.amount)}</td>
+                     <td class="px-4 py-3">
+                        <button class="text-sky-600 hover:underline text-sm" data-translate="edit">${t('edit')}</button>
+                        <button onclick="deleteItem('labor', '${rec.id}')" class="text-red-500 hover:underline text-sm ml-2" data-translate="delete">${t('delete')}</button>
+                    </td>
+                `;
+            });
+            if (labor.length === 0) laborTable.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">No labor records found.</td></tr>';
+            // Populate All Bills Table
+            const billsTable = document.getElementById('allBillsTable');
+            billsTable.innerHTML = '';
+            bills.forEach(bill => {
+                const row = billsTable.insertRow();
+                row.className = 'hover:bg-white hover:bg-opacity-10';
+                row.innerHTML = `
+                    <td class="px-4 py-3 border-r border-sky-400 border-opacity-30">${bill.bill_no}</td>
+                    <td class="px-4 py-3 border-r border-sky-400 border-opacity-30">${new Date(bill.date).toLocaleDateString('th-TH')}</td>
+                    <td class="px-4 py-3 border-r border-sky-400 border-opacity-30">${bill.customer_name}</td>
+                    <td class="px-4  py-3 border-r border-sky-400 border-opacity-30">${new Intl.NumberFormat('th-TH').format(bill.total_amount)}</td>
+                    <td class="px-4 py-3"><button class="text-sky-600 hover:underline text-sm" data-translate="viewBill">${t('viewBill')}</button></td>
+                `;
+            });
+            if (bills.length === 0) billsTable.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">No bills found.</td></tr>';
+        }
+
+        /* FIX 2: Consolidating API functions for consistency */
+        async function apiGet(action, params) {
+            try {
+                const u = new URL(API_URL);
+                u.searchParams.set("action", action);
+                if (params) Object.keys(params).forEach(k => u.searchParams.set(k, params[k]));
+                const res = await fetch(u.toString(), { cache: "no-store" });
+                return await res.json();
+            } catch (err) {
+                console.error("apiGet error", err);
+                return { ok: false, success: false, error: err.toString() };
+            }
+        }
+
+        async function apiPost(action, token, payload) {
+            try {
+                const body = { action, token, ...payload };
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+                // Check for non-JSON response errors (like a deployment error screen)
+                const text = await res.text();
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    // If parsing fails, it's likely an HTML/error response from Apps Script
+                    console.error("apiPost raw response:", text);
+                    return { ok: false, success: false, error: "Invalid JSON or server error response" };
+                }
+            } catch (err) {
+                console.error('apiPost error', err);
+                return { ok: false, success: false, error: err.toString() };
+            }
+        }
+
+        /* ======= Authentication ======= */
+        async function doLogin(username, password) {
+            // FIX: doLogin must use the consolidated apiPost (action, token, payload)
+            // For login, 'token' is null/not yet generated.
+            const result = await apiPost("login", null, { username, password });
+
+            // The structure result && result.ok is crucial here
+            if (result && result.ok) {
+                localStorage.setItem("swb_token", result.token);
+                localStorage.setItem("swb_role", result.role);
+                localStorage.setItem("swb_user_name", result.name);
+                localStorage.setItem("swb_customer_no", result.customer_no || "");
+                await ensureDataAndShow();
+            } else {
+                showNotification(t("loginError"), "error");
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.currentUser = null;
+            window.currentUserRole = null;
+            location.reload();
+        }
+
+        /* ======= Helper: notify (non-intrusive) ======= */
+        function showNotification(message, type = 'info') {
+            try {
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed; top: 60px; right: 20px;
+                    background: ${type === 'error' ? 'rgba(239,68,68,0.92)' : 'rgba(34,197,94,0.92)'};
+                    color: white; padding: 10px 14px; border-radius: 10px; font-weight:600; z-index:10000;
+                    box-shadow: 0 6px 24px rgba(0,0,0,0.2);
+                `;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 3000);
+            } catch (e) { console.warn('notify failed', e); }
+        }
+
+        /* ======= UI Interaction Functions (View Bill, Delete, Modals...) ======= */
+
+        function viewBill(bill_no) {
+            const bill = (window.SWB_DATA.bills || []).find(function(b) { return String(b.bill_no) === String(bill_no); });
+            const billContent = document.getElementById('billContent');
+            if (!bill) return;
+
+            const { loads = [], labor = [] } = window.SWB_DATA;
+            const billPrice = bill.price_at_creation || 0;
+
+            let loadsHtml = '';
+            if (bill.load_ids && bill.load_ids.length > 0) {
+                const billLoads = loads.filter(l => bill.load_ids.includes(l.id));
+                billLoads.forEach(function(load) {
+                    const amount = load.weight * billPrice;
+                    loadsHtml += `
+                        <tr class="border-b border-gray-200">
+                            <td class="py-2 pr-2">${new Date(load.date).toLocaleDateString('th-TH')}</td>
+                            <td class="py-2 px-2">ค่าอ้อย (รถ ${load.truck_id})</td>
+                            <td class="py-2 px-2 text-right">${load.weight} ตัน</td>
+                            <td class="py-2 pl-2 text-right">${new Intl.NumberFormat('th-TH').format(amount)}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            let laborHtml = '';
+            if (bill.labor_ids && bill.labor_ids.length > 0) {
+                const billLabor = labor.filter(l => bill.labor_ids.includes(l.id));
+                billLabor.forEach(function(item) {
+                    laborHtml += `
+                        <tr class="border-b border-gray-200">
+                            <td class="py-2 pr-2">${new Date(item.date).toLocaleDateString('th-TH')}</td>
+                            <td class="py-2 px-2">${item.type}</td>
+                            <td class="py-2 px-2 text-right">-</td>
+                            <td class="py-2 pl-2 text-right">${new Intl.NumberFormat('th-TH').format(item.amount)}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            billContent.innerHTML = `
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">ใบแจ้งหนี้ #${bill.bill_no}</h2>
+                    <p class="text-gray-600">ลูกค้า: ${bill.customer_name}</p>
+                    <p class="text-gray-600">วันที่: ${new Date(bill.date).toLocaleDateString('th-TH')}</p>
+                </div>
+                <table class="w-full text-sm text-gray-700 mb-6">
+                    <thead>
+                    <tr class="border-b-2 border-gray-300">
+                            <th class="text-left font-semibold py-2 pr-2">วันที่</th>
+                            <th class="text-left font-semibold py-2 px-2">รายการ</th>
+                            <th class="text-right font-semibold py-2 px-2">จำนวน</th>
+                            <th class="text-right font-semibold py-2 pl-2">ยอดเงิน (บาท)</th>
+                        </tr>
+                    </thead>
+                    <tbody>${loadsHtml}${laborHtml}</tbody>
+                </table>
+                <div class="text-right">
+                    <p class="text-gray-600">ยอดรวม</p>
+                    <p class="text-3xl font-bold text-gray-800">${new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(bill.total_amount)}</p>
+                </div>
+            `;
+
+            document.getElementById('billModal').classList.remove('hidden');
+        }
+        function closeBillModal() { document.getElementById('billModal').classList.add('hidden'); }
+        function printBill() { window.print(); }
+
+        async function deleteItem(type, id) {
+            const dataArray = type === 'load' ? window.SWB_DATA.loads : window.SWB_DATA.labor;
+            const item = (dataArray || []).find(function(i) { return String(i.id) === String(id); });
+            if (item && item.billed) {
+                showNotification(`Cannot delete. This ${type} is already part of a bill.`, 'error');
+                return;
+            }
+
+            const confirmMessage = `คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้? การกระทำนี้ไม่สามารถย้อนกลับได้`;
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            showNotification(`Deleting ${type}...`, 'info');
+            // FIX: Use consolidated apiPost
+            const result = await apiPost('deleteItem', localStorage.getItem('swb_token'), { type, id });
+            if (result && result.success) {
+                showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'info');
+                await ensureDataAndShow();
+            } else {
+                showNotification(result.error || `Failed to delete ${type}.`, 'error');
+            }
+        }
+
+        /* ======= Admin Modal Functions ======= */
+        function showCreateBillModal() {
+            const modal = document.getElementById('createBillModal');
+            const select = document.getElementById('billCustomerSelect');
+            const loadsDiv = document.getElementById('billableLoads');
+            const laborDiv = document.getElementById('billableLabor');
+            const totalEl = document.getElementById('billTotalAmount');
+            select.innerHTML = '<option value="">Select a customer</option>';
+            loadsDiv.innerHTML = '<p class="text-sm text-gray-500 text-center p-4">Select a customer to see loads.</p>';
+            laborDiv.innerHTML = '<p class="text-sm text-gray-500 text-center p-4">Select a customer to see labor costs.</p>';
+            totalEl.textContent = '0.00 THB';
+            (window.SWB_DATA.customers || []).forEach(function(c) {
+                const option = document.createElement('option');
+                option.value = c.customer_no;
+                option.textContent = `${c.name} (${c.customer_no})`;
+                select.appendChild(option);
+            });
+            select.onchange = () => populateBillableItems();
+            modal.classList.remove('hidden');
+        }
+
+        function closeCreateBillModal() {
+            document.getElementById('createBillModal').classList.add('hidden');
+        }
+
+        function populateBillableItems() {
+            const customerNo = document.getElementById('billCustomerSelect').value;
+            const loadsDiv = document.getElementById('billableLoads');
+            const laborDiv = document.getElementById('billableLabor');
+            loadsDiv.innerHTML = '';
+            laborDiv.innerHTML = '';
+
+            if (!customerNo) return;
+
+            const price = (window.SWB_DATA.settings || []).find(function(s) { return s.key === 'current_price'; })?.value || 0;
+
+            const billableLoads = (window.SWB_DATA.loads || []).filter(function(l) { return String(l.customer_no) === customerNo && !l.billed; });
+            billableLoads.forEach(load => {
+                const amount = load.weight * price;
+                loadsDiv.innerHTML += `
+                    <label class="flex items-center space-x-2 p-2 rounded hover:bg-white hover:bg-opacity-20 text-sm">
+                        <input type="checkbox" class="bill-item-cb" data-type="load" data-id="${load.id}" data-amount="${amount}">
+                        <span>${new Date(load.date).toLocaleDateString('th-TH')} - ${load.weight} tons</span>
+                    </label>`;
+            });
+            if (billableLoads.length === 0) loadsDiv.innerHTML = '<p class="text-sm text-gray-500 text-center p-4">No unbilled loads.</p>';
+
+            const billableLabor = (window.SWB_DATA.labor || []).filter(function(l) { return String(l.customer_no) === customerNo && !l.billed; });
+            billableLabor.forEach(labor => {
+                laborDiv.innerHTML += `
+                    <label class="flex items-center space-x-2 p-2 rounded hover:bg-white hover:bg-opacity-20 text-sm">
+                        <input type="checkbox" class="bill-item-cb" data-type="labor" data-id="${labor.id}" data-amount="${labor.amount}">
+                        <span>${new Date(labor.date).toLocaleDateString('th-TH')} - ${labor.type} (${labor.amount} THB)</span>
+                    </label>`;
+            });
+            if (billableLabor.length === 0) laborDiv.innerHTML = '<p class="text-sm text-gray-500 text-center p-4">No unbilled labor.</p>';
+
+            document.querySelectorAll('.bill-item-cb').forEach(function(cb) { cb.onchange = function() { calculateBillTotal(); }; });
+            calculateBillTotal();
+        }
+
+        function calculateBillTotal() {
+            let total = 0;
+            document.querySelectorAll('.bill-item-cb:checked').forEach(cb => total += parseFloat(cb.dataset.amount));
+            document.getElementById('billTotalAmount').textContent = `${new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(total)}`;
+        }
+
+        function updateLanguage() {
+            applyTranslations();
+            document.addEventListener('DOMContentLoaded', () => {
+                if (typeof applyTranslations === 'function') applyTranslations();
+            });
+            if (window.currentUser && window.currentUserRole === 'CUSTOMER') {
+                loadCustomerData();
+            } else if (window.currentUser && window.currentUserRole === 'ADMIN') {
+                loadAdminData();
+            }
+        }
+
+        /* ======= Core: ensure data loaded & show appropriate UI ======= */
+        async function ensureDataAndShow() {
+            const token = localStorage.getItem("swb_token");
+            const role = localStorage.getItem("swb_role");
+
+            if (token && role === "ADMIN") {
+                window.currentUserRole = "ADMIN";
+                window.currentUser = { name: localStorage.getItem("swb_user_name") || "Admin" };
+                // FIX: Use consolidated apiPost
+                const result = await apiPost("getAll", token, {});
+                if (result && result.ok) {
+                    window.SWB_DATA = result.data;
+                    showAdminDashboard();
+                    loadAdminData();
+                } else logout();
+            } else if (token && role === "CUSTOMER") {
+                window.currentUserRole = "CUSTOMER";
+                const customerNo = localStorage.getItem("swb_customer_no");
+                window.currentUser = { name: localStorage.getItem("swb_user_name"), customer_no: customerNo };
+                // FIX: Use consolidated apiGet
+                const result = await apiGet("getCustomerData", { customer_no: customerNo });
+                if (result && result.ok) {
+                    window.SWB_DATA = result;
+                    showCustomerPortal();
+                    loadCustomerData();
+                } else logout();
+            }
+        }
+
+        /* ======= Auto-run on page load and Form Submit ======= */
+        document.addEventListener("DOMContentLoaded", function() {
+            setTimeout(ensureDataAndShow, 200);
+
+            const loginForm = document.getElementById("loginForm");
+            if (loginForm) {
+                loginForm.addEventListener("submit", function(e) {
+                    e.preventDefault();
+                    const username = document.getElementById("username").value.trim();
+                    const password = document.getElementById("password").value.trim();
+                    if (!username || !password) return showNotification(t("loginRequired"), "error");
+                    doLogin(username, password);
+                });
+            }
+
+            const createBillForm = document.getElementById('createBillForm');
+            if (createBillForm) {
+                createBillForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const customer_no = document.getElementById('billCustomerSelect').value;
+                    if (!customer_no) { return showNotification('Please select a customer', 'error'); }
+
+                    const load_ids = Array.from(document.querySelectorAll('.bill-item-cb:checked[data-type="load"]')).map(cb => cb.dataset.id);
+                    const labor_ids = Array.from(document.querySelectorAll('.bill-item-cb:checked[data-type="labor"]')).map(cb => cb.dataset.id);
+
+                    if (load_ids.length === 0 && labor_ids.length === 0) { return showNotification('Please select items to bill', 'error'); }
+
+                    const payload = { customer_no, load_ids, labor_ids };
+
+                    showNotification('Creating bill...', 'info');
+                    // FIX: Use consolidated apiPost
+                    const result = await apiPost('createBill', localStorage.getItem('swb_token'), payload);
+
+                    if (result && result.success) {
+                        showNotification('Bill created successfully!', 'info');
+                        closeCreateBillModal();
+                        await ensureDataAndShow(); // Refresh all data
+                    } else {
+                        showNotification(result.error || 'Failed to create bill.', 'error');
+                    }
+                });
+            }
+        });
+    </script>
+
+</body>
+
+</html>
